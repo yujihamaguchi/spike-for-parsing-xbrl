@@ -3,35 +3,31 @@
             [spike-for-parsing-xbrl.core :refer :all]))
 
 (deftest xbrl-file-to-tsv-test
-  (testing
-      (is (= (affiliated-entities-tsv "resources/art-nature.xbrl") (slurp "resources/art-nature.tsv")))
-      (is (= (affiliated-entities-tsv "resources/rkb.xbrl") (slurp "resources/rkb.tsv")))
-      (is (= (affiliated-entities-tsv "resources/aresti.xbrl") (slurp "resources/aresti.tsv")))
-      (is (= (affiliated-entities-tsv "resources/menikon.xbrl") (slurp "resources/menikon.tsv")))
-      (is (= (affiliated-entities-tsv "resources/aichi-seiko.xbrl") (slurp "resources/aichi-seiko.tsv")))
-      (is (= (affiliated-entities-tsv "resources/meidensha.xbrl") (slurp "resources/meidensha.tsv")))
-      (is (= (affiliated-entities-tsv "resources/ryukyu-ginko.xbrl") (slurp "resources/ryukyu-ginko.tsv")))
-      (is (= (affiliated-entities-tsv "resources/watami.xbrl") (slurp "resources/watami.tsv")))
-      (is (= (affiliated-entities-tsv "resources/r-biban.xbrl") (slurp "resources/r-biban.tsv")))
-      (is (= (affiliated-entities-tsv "resources/rc-core.xbrl") (slurp "resources/rc-core.tsv")))
-      (is (= (affiliated-entities-tsv "resources/yukijirushi.xbrl") (slurp "resources/yukijirushi.tsv")))
-    ))
+  (testing (is (= (affiliated-entities-tsv "resources/art-nature.xbrl") (slurp "resources/art-nature.tsv")))
+    (is (= (affiliated-entities-tsv "resources/rkb.xbrl") (slurp "resources/rkb.tsv")))
+    (is (= (affiliated-entities-tsv "resources/aresti.xbrl") (slurp "resources/aresti.tsv")))
+    (is (= (affiliated-entities-tsv "resources/menikon.xbrl") (slurp "resources/menikon.tsv")))
+    (is (= (affiliated-entities-tsv "resources/aichi-seiko.xbrl") (slurp "resources/aichi-seiko.tsv")))
+    (is (= (affiliated-entities-tsv "resources/meidensha.xbrl") (slurp "resources/meidensha.tsv")))
+    (is (= (affiliated-entities-tsv "resources/ryukyu-ginko.xbrl") (slurp "resources/ryukyu-ginko.tsv")))
+    (is (= (affiliated-entities-tsv "resources/watami.xbrl") (slurp "resources/watami.tsv")))
+    (is (= (affiliated-entities-tsv "resources/r-biban.xbrl") (slurp "resources/r-biban.tsv")))
+    (is (= (affiliated-entities-tsv "resources/rc-core.xbrl") (slurp "resources/rc-core.tsv")))
+    (is (= (affiliated-entities-tsv "resources/yukijirushi.xbrl") (slurp "resources/yukijirushi.tsv")))))
 
-(deftest only-tags-test
-  (testing
-      (is (= [{:tag :x}] (only-tags  #{:x} [{:tag :x} {:tag :y}])))
-      (is (= [] (only-tags #{} [] ) ))
-      (is (= [] (only-tags #{:x} [] ) ))
-    ))
+(deftest only-elements-tagged-with-test
+  (testing (is (= [{:tag :x}] (only-elements-tagged-with  #{:x} [{:tag :x} {:tag :y}])))
+    (is (= [{:tag :x} {:tag :y}] (only-elements-tagged-with  #{:x :y} [{:tag :x} {:tag :y}])))
+    (is (= [] (only-elements-tagged-with #{:x} [] ) ))))
+
+(deftest content-tagged-with-test
+  (testing (is (= "foo" (content-tagged-with :foo [{:tag :foo :content ["foo"]}])))
+    (is (= nil (content-tagged-with :foo [{:tag :bar :content ["bar"]}])))))
 
 (deftest contain-tags?-test
-  (testing
-      (is (= true (boolean (contain-tags? #{:x} {:tag :x} ))))
-      (is (= false (boolean (contain-tags? #{:y} {:tag :x} ))))
-    ))
+  (testing (is (= true (boolean (contain-tags? #{:x} {:tag :x} ))))
+    (is (= false (boolean (contain-tags? #{:y} {:tag :x} ))))))
 
-(deftest contents-tagged-by-test
-  (testing
-      (is (= [["foo"]] (contents-tagged-by :x [{:tag :x :content ["foo"]}])))
-    (is (= [["foo"] ["bar"]] (contents-tagged-by :x [{:tag :x :content ["foo"]} {:tag :x :content ["bar"]}])))
-    ))
+(deftest contents-tagged-with-test
+  (testing (is (= [["foo"]] (contents-tagged-with :x [{:tag :x :content ["foo"]}])))
+    (is (= [["foo"] ["bar"]] (contents-tagged-with :x [{:tag :x :content ["foo"]} {:tag :x :content ["bar"]}])))))
