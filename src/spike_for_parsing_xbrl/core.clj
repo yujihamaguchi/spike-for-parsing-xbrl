@@ -2,7 +2,6 @@
   (:require [clojure.xml :as xml])
   (:gen-class))
 
-
 (defn xml-seq-of
   [source]
   (->> source
@@ -23,47 +22,62 @@
   [tags m]
   (filter (comp tags :tag) m))
 
-(defn content-tagged-with
+(defn first-content-tagged-with
   [tag xml-seq]
-  (->> (only-elements-tagged-with #{ tag } xml-seq)
+  (->> xml-seq
+       (only-elements-tagged-with #{ tag })
        first
        :content
        first))
 
 (defn contents-tagged-with
   [tag xml-seq]
-  (->> (only-elements-tagged-with #{ tag } xml-seq)
+  (->> xml-seq
+       (only-elements-tagged-with #{ tag })
        (map :content)))
 
 (defn cleansing-string
   [value]
-  (-> (clojure.string/replace value #"^[ －―]+" "")
+  (-> value
+      (clojure.string/replace #"^[ －―]+" "")
       (clojure.string/trim)))
 
-(defn content-string [table-data-contents]
-  (->> (mapcat (fn [table-data-content]
+(defn concat-string-of [table-data-contents]
+  (->> table-data-contents
+       (mapcat (fn [table-data-content]
                  (->> (tree-seq associative? :content table-data-content)
                       (filter string?)
-                      (map cleansing-string)))
-               table-data-contents)
+                      (map cleansing-string))))
        (interpose " ")
-       (apply str)))
+       (apply str)
+       cleansing-string))
 
-(defn affiliated-company-record-from
+(defn table-data-contents
   [table-record]
-  (->> (contents-tagged-with :td table-record)
-       (map content-string)
-       (take 5))) ;; 名称、 住所、 資本金、 主な事業内容、 議決権の所有割合 の 5 つ
+  (->> table-record
+       (contents-tagged-with :td)
+       (map concat-string-of))) 
+
+(def ng-words-for-company-name
+  ["名称"
+   "損益情報"
+   "売上高"
+   "経常利益"
+   "経常損失"
+   "当期純利益"
+   "当期純損失"
+   "純資産額"
+   "総資産額"])
 
 (defn valid-name?
   [name]
-  (and (not (= name "名称"))
-       (not (= name "主要な損益情報等"))
+  (and (not-any? #(re-seq (re-pattern %) name) ng-words-for-company-name)
        (< 1 (count name))))
 
 (defn valid-capital?
   [capital]
-  (or (try
+  (or (empty? capital)
+      (try
         (->> (re-seq #"\d" capital)
              (apply str)
              Float/parseFloat
@@ -82,27 +96,44 @@
 
 (defn construct-affiliated-company-records
   [edinet-code fiscal-year-end-date records]
-  (->> (filter valid-record? records)
+  (->> records
+       (filter valid-record?)
        (map #(cons fiscal-year-end-date %))
        (map #(cons edinet-code %))))
 
 (defn as-tsv
   [records]
-  (->> (map #(apply str (interpose "\t" %)) records)
+  (->> records
+       (map #(apply str (interpose "\t" %)))
        (interpose "\n")
        (apply str)))
+
+(defn start-column-position
+  [table-data-contents]
+  (let [name-haeder-string "名称"
+        name-header-pattern #"^\s*名称.*"]
+    (letfn [(header? [content]
+              (some #(re-seq name-header-pattern %) content))]
+      (let [header (first (filter header? table-data-contents))
+            indexed-header-contents (zipmap (map #(clojure.string/replace % name-header-pattern name-haeder-string)
+                                                 header)
+                                            (iterate inc 0))]
+        (val (find indexed-header-contents name-haeder-string))))))
 
 (defn affiliated-companies-tsv
   [xbrl-file-name]
   (let [xbrl-seq (xml-seq-of (java.io.File. xbrl-file-name))
-        edinet-code (content-tagged-with :jpdei_cor:EDINETCodeDEI xbrl-seq)
-        fiscal-year-end-date (content-tagged-with :jpdei_cor:CurrentFiscalYearEndDateDEI xbrl-seq)
-        html-seq (->> (content-tagged-with :jpcrp_cor:OverviewOfAffiliatedEntitiesTextBlock xbrl-seq)
+        edinet-code (first-content-tagged-with :jpdei_cor:EDINETCodeDEI xbrl-seq)
+        fiscal-year-end-date (first-content-tagged-with :jpdei_cor:CurrentFiscalYearEndDateDEI xbrl-seq)
+        html-seq (->> (first-content-tagged-with :jpcrp_cor:OverviewOfAffiliatedEntitiesTextBlock xbrl-seq)
                       enclose-with-dummy-tag
                       string-to-stream
-                      xml-seq-of)]
-    (->> (contents-tagged-with :tr html-seq)
-         (map affiliated-company-record-from)
+                      xml-seq-of)
+        table-records (contents-tagged-with :tr html-seq)
+        table-data-contents (map table-data-contents table-records)]
+    (->> table-data-contents
+         (map #(drop (start-column-position table-data-contents) %))
+         (map #(take 5 %)) ;; 名称、 住所、 資本金、 主な事業内容、 議決権の所有割合 の 5 つ
          (construct-affiliated-company-records edinet-code fiscal-year-end-date)
          as-tsv)))
 
