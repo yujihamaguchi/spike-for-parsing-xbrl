@@ -58,11 +58,14 @@
        (contents-tagged-with :td)
        (map concat-string-of))) 
 
-(def ng-words-for-company-name
+(def ng-words-for-name-address
   ["名称"
    "会社名"
    "損益情報"
-   "売上高"
+   "売上"
+   "損失"
+   "資本"
+   "資産合計"
    "経常利益"
    "経常損失"
    "当期純利益"
@@ -71,10 +74,14 @@
    "総資産額"
    "営業収益"])
 
-(defn valid-name?
-  [name]
-  (and (not-any? #(re-seq (re-pattern %) name) ng-words-for-company-name)
-       (< 1 (count name))))
+(defn amount?
+  [value]
+  (= 0 (count (clojure.string/replace value #"[\d,[１-９]]" ""))))
+
+(defn valid-string-value?
+  [value]
+  (and (not-any? #(re-seq (re-pattern %) value) ng-words-for-name-address)
+       (not (amount? value))))
 
 (defn valid-capital?
   [capital]
@@ -92,8 +99,14 @@
   (let [threshold 4]
     (and (<= threshold (count (filter (complement empty?) record)))
          (let [name (first record)
-               capital (nth record 2)]
-           (and (valid-name? name)
+               address (second record)
+               capital (nth record 2)
+               description (nth record 3)]
+           (and (valid-string-value? name)
+                (or (empty? address)
+                    (valid-string-value? address))
+                (or (empty? description)
+                    (valid-string-value? description))
                 (valid-capital? capital))))))
 
 (defn construct-affiliated-company-records
