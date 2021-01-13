@@ -14,7 +14,9 @@
     (is (= (slurp "resources/r-biban.tsv") (affiliated-companies-tsv "resources/r-biban.xbrl")))
     (is (= (slurp "resources/rc-core.tsv") (affiliated-companies-tsv "resources/rc-core.xbrl")))
     (is (= (slurp "resources/yukijirushi.tsv") (affiliated-companies-tsv "resources/yukijirushi.xbrl")))
-    (is (= (slurp "resources/yokokawa-denki.tsv") (affiliated-companies-tsv "resources/yokokawa-denki.xbrl")))))
+    (is (= (slurp "resources/yokokawa-denki.tsv") (affiliated-companies-tsv "resources/yokokawa-denki.xbrl")))
+    (is (= (slurp "resources/moriya-shokai.tsv") (affiliated-companies-tsv "resources/moriya-shokai.xbrl")))
+    (is (= (slurp "resources/ckd.tsv") (affiliated-companies-tsv "resources/ckd.xbrl")))))
 
 (deftest only-elements-tagged-with-test
   (testing (is (= [{:tag :x}] (only-elements-tagged-with  #{:x} [{:tag :x} {:tag :y}])))

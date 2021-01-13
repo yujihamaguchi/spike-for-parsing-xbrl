@@ -60,6 +60,7 @@
 
 (def ng-words-for-company-name
   ["名称"
+   "会社名"
    "損益情報"
    "売上高"
    "経常利益"
@@ -67,7 +68,8 @@
    "当期純利益"
    "当期純損失"
    "純資産額"
-   "総資産額"])
+   "総資産額"
+   "営業収益"])
 
 (defn valid-name?
   [name]
@@ -108,17 +110,19 @@
        (interpose "\n")
        (apply str)))
 
-(defn start-column-position
-  [table-data-contents]
-  (let [name-haeder-string "名称"
-        name-header-pattern #"^\s*名称.*"]
+(defn column-position-named-with
+  [company-name-header-string table-data-contents]
+  (let [name-haeder-string company-name-header-string
+        name-header-pattern (re-pattern (str "^\\s*" company-name-header-string ".*")) ]
     (letfn [(header? [content]
               (some #(re-seq name-header-pattern %) content))]
       (let [header (first (filter header? table-data-contents))
             indexed-header-contents (zipmap (map #(clojure.string/replace % name-header-pattern name-haeder-string)
                                                  header)
                                             (iterate inc 0))]
-        (val (find indexed-header-contents name-haeder-string))))))
+        (if-not (seq header)
+          ##Inf
+          (val (find indexed-header-contents name-haeder-string)))))))
 
 (defn affiliated-companies-tsv
   [xbrl-file-name]
@@ -132,7 +136,7 @@
         table-records (contents-tagged-with :tr html-seq)
         table-data-contents (map table-data-contents table-records)]
     (->> table-data-contents
-         (map #(drop (start-column-position table-data-contents) %))
+         (map #(drop (apply min (map (fn [name] (column-position-named-with name table-data-contents)) ["名称" "会社名" "名　　称"])) %))
          (map #(take 5 %)) ;; 名称、 住所、 資本金、 主な事業内容、 議決権の所有割合 の 5 つ
          (construct-affiliated-company-records edinet-code fiscal-year-end-date)
          as-tsv)))
