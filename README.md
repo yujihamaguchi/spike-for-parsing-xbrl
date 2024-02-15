@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Introduction 
 TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
 
@@ -18,3 +19,41 @@ If you want to learn more about creating good readme files then refer the follow
 - [ASP.NET Core](https://github.com/aspnet/Home)
 - [Visual Studio Code](https://github.com/Microsoft/vscode)
 - [Chakra Core](https://github.com/Microsoft/ChakraCore)
+=======
+# spike-for-parsing-xbrl
+
+FIXME: description
+
+## Installation
+
+Download from http://example.com/FIXME.
+
+## Usage
+
+FIXME: explanation
+
+    $ java -jar spike-for-parsing-xbrl-0.1.0-standalone.jar [args]
+
+## Options
+
+FIXME: listing of options this app accepts.
+
+## Examples
+
+...
+
+### Bugs
+
+...
+
+### Any Other Sections
+### That You Think
+### Might be Useful
+
+## License
+
+Copyright © 2021 FIXME
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.
+>>>>>>> remote-repo/master
