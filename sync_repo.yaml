@@ -1,0 +1,23 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'windows-latest'
+
+jobs:
+- job: SyncRepository
+  steps:
+  - checkout: self
+    persistCredentials: true
+
+  - script: |
+      git config user.email "yuji.hamaguchi@avanade.com"
+      git config user.name "Yuji Hamaguchi"
+      git remote add testrepo https://$(PAT)@github.com/yujihamaguchi/spike-for-parsing-xbrl.git
+      git fetch testrepo main
+      git checkout -b main
+      git pull --rebase origin main
+      git push -f testrepo main
+    displayName: 'Sync Repository is done'
